@@ -1,0 +1,141 @@
+/* Root container setup */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* Logo hover effects */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms ease;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em rgba(255, 255, 255, 0.7));
+}
+
+/* Animated logo (if needed) */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Card container styling */
+.card {
+  padding: 2em;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+/* Loader styling */
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #00c6ff;
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
+  margin: 20px auto;
+  display: block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loader text */
+.loader-text {
+  color: #fff;
+  font-size: 14px;
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+/* Overlay background for loading state */
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 9999;
+}
+
+/* Buttons */
+.sign__btn {
+  width: 100%;
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+  border: none;
+  color: #fff;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sign__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 114, 255, 0.5);
+}
+
+/* Input fields */
+.sign__input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.sign__input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Checkbox & text links */
+.sign__group--checkbox label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sign__link {
+  color: #00c6ff;
+  transition: color 0.2s ease;
+}
+
+.sign__link:hover {
+  color: #fff;
+}
+
+.sign__error {
+  color: #ff4d4d;
+  margin-top: 10px;
+  font-size: 14px;
+}
