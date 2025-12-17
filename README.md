@@ -1,16 +1,17 @@
-# React + Vite
+# FlixGo - Netflix-Inspired Streaming Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+FlixGo is a modern, responsive streaming platform inspired by Netflix. It features a sleek UI/UX with dynamic content sections, smooth transitions, an interactive 3D poster wall on the homepage, lazy loading, and subtle animations for an engaging user experience.
 
-Currently, two official plugins are available:
+This repository contains the **client-side** (frontend) of the project, currently built with vanilla HTML, CSS, and JavaScript. Future plans include migrating to React.js for better modularity and state management.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Responsive Layout** – Works seamlessly on desktop, tablet, and mobile devices.
+- **Interactive Hero Carousel** – Full-width featured content slider.
+- **Dynamic Content Rows** – Scrollable rows for different categories (e.g., Trending, New Releases, etc.).
+- **3D Poster Wall** – Eye-catching homepage section with mouse-controlled 3D rotation and tilt effects (lightweight implementation for performance).
+- **Lazy Loading** – Images load as users scroll to improve initial load time.
+- **Smooth Animations & Transitions** – Subtle hover effects, fade-ins, and parallax-like scrolling.
+- **Dark Theme** – Netflix-style dark UI for comfortable viewing.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Project Structure
