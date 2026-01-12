@@ -1,6 +1,8 @@
+// src/pages/Login.jsx - REFACTORED VERSION
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { authService } from '../services/apiService';
+import config from '../config/config';
 import backgroundImage from '/src/assets/img/covers/robot.jpg';
 
 const Login = () => {
@@ -16,28 +18,26 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/User/ClientLogin', {
-        username,
-        password,
-      });
+      const response = await authService.login(username, password);
 
-      console.log('LOGIN RESPONSE:', response.data); // ← DEBUG
+      console.log('LOGIN RESPONSE:', response.data);
 
       if (response.data.success) {
         const token = response.data.data.token;
         const email = response.data.data.email || username;
 
-        localStorage.setItem('token', token);   // ← TEMP JWT
-        console.log("token:", token);
-        localStorage.setItem('email', email);   // ← For OTP
+        // Use config constants
+        localStorage.setItem(config.STORAGE_KEYS.TOKEN, token);
+        localStorage.setItem(config.STORAGE_KEYS.EMAIL, email);
 
+        console.log("Token stored:", token);
         navigate('/otp');
       } else {
         setError(response.data.message || 'Login failed');
       }
     } catch (err) {
       console.error('LOGIN ERROR:', err.response?.data || err);
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ const Login = () => {
             <Link to="/" className="sign__logo">
               <img
                 src="/src/assets/img/logo.svg"
-                alt="FlixGo Logo"
+                alt={`${config.APP_NAME} Logo`}
                 style={{ width: '120px', marginBottom: '20px' }}
               />
             </Link>
@@ -142,7 +142,7 @@ const Login = () => {
             </button>
 
             <span className="sign__text">
-              Don’t have an account?{' '}
+              Don't have an account?{' '}
               <Link to="/signup" className="sign__link">
                 Sign up!
               </Link>
