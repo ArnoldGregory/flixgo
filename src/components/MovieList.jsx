@@ -1,23 +1,24 @@
-// src/pages/Movies.jsx → FINAL 100% FULL CODE — REAL GENRES + YEARS + SEARCH + FILTER
+// src/pages/MovieList.jsx - ENHANCED WITH NEW COMPONENTS
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
+import { contentService } from "../services/apiService";
+import Header from "../components/Header";
+import MovieCard from "../components/MovieCard";
+import { PageLoader, SkeletonGrid } from "../components/LoadingSpinner";
+import { useToast, ToastContainer } from "../components/Toast";
 
 const Movies = () => {
   const [movies, setMovies] = useState([]);
   const [genres, setGenres] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
 
-  const token = localStorage.getItem("token");
-
-  // DETERMINE ACTIVE TAB FROM URL
   const getActiveTab = () => {
     if (location.pathname.includes("/series")) return "series";
     if (location.pathname.includes("/cartoons")) return "cartoons";
@@ -27,16 +28,11 @@ const Movies = () => {
   const [activeTab, setActiveTab] = useState(getActiveTab());
 
   useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     const fetchData = async () => {
       try {
         const [moviesRes, genresRes] = await Promise.all([
-          axios.get("/api/Content/GetMovies", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("/api/Content/GetGenres", { headers: { Authorization: `Bearer ${token}` } })
+          contentService.getMovies(),
+          contentService.getGenres()
         ]);
 
         const movieList = moviesRes.data.success ? moviesRes.data.data : moviesRes.data;
@@ -48,17 +44,17 @@ const Movies = () => {
         setLoading(false);
       } catch (err) {
         if (err.response?.status === 401) {
-          localStorage.clear();
+          toast.error("Session expired. Please login again.");
           navigate("/login");
         } else {
-          setError("Failed to load content.");
+          toast.error("Failed to load movies. Please try again.");
         }
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [token, navigate]);
+  }, [navigate]);
 
   // SEARCH + FILTER LOGIC
   useEffect(() => {
@@ -82,11 +78,6 @@ const Movies = () => {
     setFilteredMovies(results);
   }, [searchQuery, selectedGenre, selectedYear, movies]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
-
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     if (tab === "series") navigate("/series");
@@ -94,68 +85,18 @@ const Movies = () => {
     else navigate("/movies");
   };
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-dark">
-        <div className="loader"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-dark text-danger">
-        <h3>{error}</h3>
-      </div>
-    );
-  }
-
-  const newReleases = filteredMovies.slice(0, 6);
-  const comingSoon = filteredMovies.slice(3, 9);
-
-  const partners = [
-    "themeforest-light-background.png",
-    "audiojungle-light-background.png",
-    "codecanyon-light-background.png",
-    "photodune-light-background.png",
-    "activeden-light-background.png",
-    "3docean-light-background.png",
-  ];
-
-  // CORRECT IMAGE URL
-  const getImageUrl = (url) => {
-    if (!url) return "/src/assets/img/covers/cover.jpg";
-    return `https://localhost:7145${url}`;
-  };
-
-  // Extract unique years
   const uniqueYears = [...new Set(movies.map(m => m.release_year))].sort((a, b) => b - a);
 
+  if (loading) {
+    return <PageLoader message="Loading movies..." />;
+  }
+
   return (
-    <div className="body">
+    <div className="body bg-dark text-white">
+      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+      
       {/* HEADER */}
-      <header className="header header--transparent">
-        <div className="container">
-          <div className="header__content">
-            <Link to="/" className="header__logo">
-              <img src="/src/assets/img/logo.svg" alt="FlixGo" />
-            </Link>
-            <ul className="header__nav">
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/movies" className="active">Catalog</Link></li>
-              <li><Link to="/profile">Profile</Link></li>
-              <li><Link to="/pricing">Pricing</Link></li>
-              <li><Link to="/faq">Help</Link></li>
-            </ul>
-            <div className="header__auth">
-              <button onClick={handleLogout} className="header__sign-in">
-                <i className="icon ion-ios-log-out"></i>
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* HERO SECTION */}
       <section
@@ -164,33 +105,40 @@ const Movies = () => {
           backgroundImage: "url('/src/assets/img/home/home__bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "top center",
-          minHeight: "700px",
+          minHeight: "500px",
           position: "relative",
+          marginTop: "80px",
         }}
       >
         <div className="hero-overlay"></div>
-        <div className="container text-center" style={{ position: "relative", zIndex: 2 }}>
-          <h1 className="hero__title">Welcome to <b>FLIXGO</b></h1>
-          <p className="hero__subtitle">Stream the best movies and TV shows instantly.</p>
+        <div className="container text-center" style={{ position: "relative", zIndex: 2, paddingTop: "120px" }}>
+          <h1 className="hero__title display-3 fw-bold">Discover Amazing Movies</h1>
+          <p className="hero__subtitle fs-4">Stream thousands of movies in HD quality</p>
         </div>
       </section>
 
       {/* SEARCH + FILTER BAR */}
-      <section className="py-4 bg-dark">
+      <section className="py-4 bg-black">
         <div className="container">
           <div className="row g-3 align-items-center justify-content-center">
             <div className="col-12 col-md-5">
-              <input
-                type="text"
-                placeholder="Search movies..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="form-control form-control-lg"
-                style={{ background: "#333", border: "none", color: "white" }}
-              />
+              <div className="search-input-wrapper">
+                <i className="icon ion-ios-search search-icon"></i>
+                <input
+                  type="text"
+                  placeholder="Search movies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="form-control form-control-lg search-input"
+                />
+              </div>
             </div>
             <div className="col-md-3">
-              <select className="form-select form-select-lg" value={selectedGenre} onChange={(e) => setSelectedGenre(e.target.value)}>
+              <select 
+                className="form-select form-select-lg filter-select" 
+                value={selectedGenre} 
+                onChange={(e) => setSelectedGenre(e.target.value)}
+              >
                 <option value="">All Genres</option>
                 {genres.map(g => (
                   <option key={g.id} value={g.id}>{g.name}</option>
@@ -198,7 +146,11 @@ const Movies = () => {
               </select>
             </div>
             <div className="col-md-2">
-              <select className="form-select form-select-lg" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+              <select 
+                className="form-select form-select-lg filter-select" 
+                value={selectedYear} 
+                onChange={(e) => setSelectedYear(e.target.value)}
+              >
                 <option value="">All Years</option>
                 {uniqueYears.map(y => (
                   <option key={y} value={y}>{y}</option>
@@ -210,7 +162,7 @@ const Movies = () => {
       </section>
 
       {/* TABS */}
-      <section className="content py-5 bg-dark">
+      <section className="content py-5">
         <div className="container">
           <ul className="nav nav-tabs content__tabs justify-content-center mb-5">
             <li className="nav-item">
@@ -247,194 +199,132 @@ const Movies = () => {
             </li>
           </ul>
 
-          {/* TOP RATED CAROUSEL */}
-          <div className="mb-5">
-            <h1 className="home__title text-start mb-4 text-white">
-              <b>TOP RATED</b> MOVIES
-            </h1>
-            <div className="position-relative">
-              <div className="home__carousel-wrap overflow-hidden">
-                <div className="home__carousel d-flex">
-                  {filteredMovies.map((m) => (
-                    <Link key={m.id} to={`/movie/${m.id}`} className="text-decoration-none">
-                      <div className="card card--featured me-3" style={{ minWidth: "260px" }}>
-                        <div className="card__cover position-relative">
-                          <img
-                            src={getImageUrl(m.thumb_nail_url)}
-                            alt={m.title}
-                            className="w-100"
-                            style={{ height: "360px", objectFit: "cover" }}
-                            onError={(e) => (e.currentTarget.src = "/src/assets/img/covers/cover.jpg")}
-                          />
-                          <div className="card__play">
-                            <i className="icon ion-ios-play"></i>
-                          </div>
-                        </div>
-                        <div className="card__content p-3">
-                          <h3 className="card__title text-truncate text-white">{m.title}</h3>
-                          <span className="card__category d-block text-muted small">
-                            {m.genres || "Action"}
-                          </span>
-                          <span className="card__rate text-warning">
-                            <i className="icon ion-ios-star"></i> {m.rating || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* NEW RELEASES GRID */}
-          <h2 className="content__title text-white mb-4">New Releases</h2>
+          {/* MOVIES GRID */}
           <div className="row">
-            {newReleases.map((movie) => (
-              <div key={movie.id} className="col-md-6 mb-4">
-                <Link to={`/movie/${movie.id}`} className="text-decoration-none">
-                  <div className="card card--list card--dark">
-                    <div className="row g-0">
-                      <div className="col-5">
-                        <div className="card__cover">
-                          <img
-                            src={getImageUrl(movie.thumb_nail_url)}
-                            alt={movie.title}
-                            className="w-100 h-100"
-                            style={{ objectFit: "cover" }}
-                            onError={(e) => (e.currentTarget.src = "/src/assets/img/covers/cover.jpg")}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-7">
-                        <div className="card__content p-3">
-                          <h3 className="card__title text-white">{movie.title}</h3>
-                          <span className="card__category text-muted small">
-                            {movie.genres || "Drama"}
-                          </span>
-                          <p className="card__description text-light small mt-2">
-                            {movie.description || "No description available."}
-                          </p>
-                          <div className="card__meta mt-3">
-                            <span className="card__rate text-warning">
-                              <i className="icon ion-ios-star"></i> {movie.rating || "N/A"}
-                            </span>
-                            <span className="card__quality ms-3">HD</span>
-                            <span className="card__age ms-3">16+</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
+            <div className="col-12">
+              <h2 className="section__title mb-4">
+                {filteredMovies.length} Movies Found
+              </h2>
+            </div>
           </div>
+
+          {filteredMovies.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="icon ion-ios-film display-1 text-muted mb-3"></i>
+              <h3 className="text-muted">No movies found</h3>
+              <p className="text-muted">Try adjusting your filters</p>
+            </div>
+          ) : (
+            <div className="movies-grid">
+              {filteredMovies.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} type="movie" />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* COMING SOON */}
-      <section
-        className="section py-5"
-        style={{
-          backgroundImage: "url('/src/assets/img/section/section.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="container text-center">
-          <h2 className="section__title text-white">Coming Soon</h2>
-          <div className="row justify-content-center">
-            {comingSoon.map((m) => (
-              <div key={m.id} className="col-md-2 col-sm-4 mb-4">
-                <Link to={`/movie/${m.id}`} className="text-decoration-none">
-                  <div className="card card--featured">
-                    <div className="card__cover">
-                      <img
-                        src={getImageUrl(m.thumb_nail_url)}
-                        alt={m.title}
-                        className="w-100"
-                        style={{ height: "300px", objectFit: "cover" }}
-                        onError={(e) => (e.currentTarget.src = "/src/assets/img/covers/cover.jpg")}
-                      />
-                    </div>
-                    <div className="card__content p-3 text-center">
-                      <h3 className="card__title text-white">{m.title}</h3>
-                      <p className="card__category text-muted small">{m.genres || "N/A"}</p>
-                      <span className="card__rate text-warning">
-                        <i className="icon ion-ios-star"></i> {m.rating || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <style jsx>{`
+        .hero-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.8) 100%
+          );
+        }
 
-      {/* PARTNERS */}
-      <section className="section partners">
-        <div className="container text-center">
-          <h2 className="section__title">Our Partners</h2>
-          <p className="section__text">
-            It is a long <b>established</b> fact that a reader will be distracted by readable content.
-          </p>
-          <div className="row justify-content-center">
-            {partners.map((p) => (
-              <div key={p} className="col-6 col-sm-4 col-md-2 mb-4">
-                <img src={`/src/assets/img/partners/${p}`} alt={p} className="partner__img" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        .search-input-wrapper {
+          position: relative;
+        }
 
-      {/* FOOTER */}
-      <footer className="footer py-5 bg-dark text-white">
-        <div className="container">
-          <div className="row">
-            <div className="col-12 col-md-3">
-              <h6 className="footer__title">Download Our App</h6>
-              <ul className="footer__app list-unstyled d-flex gap-2">
-                <li><a href="#"><img src="/src/assets/img/Download_on_the_App_Store_Badge.svg" alt="App Store" style={{ height: "40px" }} /></a></li>
-                <li><a href="#"><img src="/src/assets/img/google-play-badge.png" alt="Google Play" style={{ height: "40px" }} /></a></li>
-              </ul>
-            </div>
-            <div className="col-6 col-sm-4 col-md-3">
-              <h6 className="footer__title">Resources</h6>
-              <ul className="footer__list list-unstyled">
-                <li><a href="#" className="text-white">About Us</a></li>
-                <li><a href="#" className="text-white">Pricing Plan</a></li>
-                <li><a href="#" className="text-white">Help</a></li>
-              </ul>
-            </div>
-            <div className="col-6 col-sm-4 col-md-3">
-              <h6 className="footer__title">Legal</h6>
-              <ul className="footer__list list-unstyled">
-                <li><a href="#" className="text-white">Terms of Use</a></li>
-                <li><a href="#" className="text-white">Privacy Policy</a></li>
-                <li><a href="#" className="text-white">Security</a></li>
-              </ul>
-            </div>
-            <div className="col-12 col-sm-4 col-md-3">
-              <h6 className="footer__title">Contact</h6>
-              <ul className="footer__list list-unstyled mb-3">
-                <li><a href="tel:+18002345678" className="text-white">+1 (800) 234-5678</a></li>
-                <li><a href="mailto:support@flixgo.com" className="text-white">support@flixgo.com</a></li>
-              </ul>
-              <ul className="footer__social d-flex gap-3">
-                <li><a href="#" className="text-white"><i className="icon ion-logo-facebook"></i></a></li>
-                <li><a href="#" className="text-white"><i className="icon ion-logo-instagram"></i></a></li>
-                <li><a href="#" className="text-white"><i className="icon ion-logo-twitter"></i></a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="footer__bottom text-center mt-4">
-            <p className="mb-0">© 2025 FlixGo. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 1.5rem;
+          color: #999;
+          pointer-events: none;
+        }
+
+        .search-input {
+          background: #1a1a1a;
+          border: 2px solid transparent;
+          color: white;
+          padding-left: 3rem;
+          transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+          background: #222;
+          border-color: #e50914;
+          box-shadow: 0 0 20px rgba(229, 9, 20, 0.2);
+        }
+
+        .filter-select {
+          background: #1a1a1a;
+          border: 2px solid transparent;
+          color: white;
+          transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+          background: #222;
+          border-color: #e50914;
+          box-shadow: 0 0 20px rgba(229, 9, 20, 0.2);
+        }
+
+        .content__tabs {
+          border: none;
+          gap: 1rem;
+        }
+
+        .nav-link {
+          background: transparent;
+          border: 2px solid #333;
+          color: #999;
+          padding: 0.75rem 2rem;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          font-weight: 600;
+        }
+
+        .nav-link:hover {
+          border-color: #e50914;
+          color: #fff;
+        }
+
+        .nav-link.active {
+          background: #e50914;
+          border-color: #e50914;
+          color: #fff;
+        }
+
+        .movies-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 2rem;
+          margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+          .movies-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+          }
+        }
+
+        .section__title {
+          color: #fff;
+          font-weight: 700;
+          font-size: 1.5rem;
+        }
+      `}</style>
     </div>
   );
 };
