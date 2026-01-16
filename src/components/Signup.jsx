@@ -10,6 +10,8 @@ const Signup = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    //this shold be changed
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!agree) {
