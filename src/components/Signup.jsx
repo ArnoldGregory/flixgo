@@ -74,6 +74,7 @@ const Signup = () => {
     try {
       const response = await authService.register(payload);
 
+      // proper redirect to login after creation
       if (response.data?.success) {
         toast.success('Account created successfully! Please login.');
         setTimeout(() => {
