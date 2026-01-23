@@ -48,6 +48,7 @@ export const authService = {
   login: (username, password) => 
     api.post(config.ENDPOINTS.LOGIN, { username, password }),
   
+  //registration now with a payload
   register: (payload) => api.post(config.ENDPOINTS.REGISTER, payload),
   
   verifyOtp: (username, password) => 
