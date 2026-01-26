@@ -1,4 +1,4 @@
-// src/pages/Profile.jsx - ENHANCED MODERN PROFILE
+// src/pages/Profile.jsx - FIXED IMAGE PERSISTENCE WITH DEBUG LOGGING
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { userService, contentService } from "../services/apiService";
@@ -22,24 +22,47 @@ const Profile = () => {
         const userRes = await userService.getProfile();
         const userData = userRes.data.data;
         
+        console.log('📥 Raw user data from API:', userData);
+        console.log('🖼️ Raw avatar_url:', userData.avatar_url);
+        
+        // Fix avatar URL handling
+        let avatarUrl = config.DEFAULT_IMAGES.USER_AVATAR;
+        
+        if (userData.avatar_url) {
+          if (userData.avatar_url.startsWith("http")) {
+            avatarUrl = userData.avatar_url;
+            console.log('✅ Using full HTTP URL:', avatarUrl);
+          } else {
+            // Remove leading slash if present to avoid double slashes
+            const cleanPath = userData.avatar_url.replace(/^\/+/, '');
+            // Remove trailing slash from base URL
+            const baseUrl = config.MEDIA_BASE_URL.replace(/\/+$/, '');
+            avatarUrl = `${baseUrl}/${cleanPath}`;
+            
+            console.log('🔧 Constructed URL:');
+            console.log('   Base URL:', baseUrl);
+            console.log('   Clean Path:', cleanPath);
+            console.log('   Final URL:', avatarUrl);
+          }
+        } else {
+          console.log('⚠️ No avatar_url found, using default');
+        }
+        
         setUser({
           id: userData.id,
           user_id: userData.user_id,
           full_name: userData.profile_name,
           email: userData.email,
-          profile_picture: userData.avatar_url?.startsWith("http")
-            ? userData.avatar_url
-            : userData.avatar_url
-              ? `${config.MEDIA_BASE_URL}${userData.avatar_url}`
-              : config.DEFAULT_IMAGES.USER_AVATAR,
+          profile_picture: avatarUrl,
           maturity_rating: userData.maturity_rating,
           language: userData.language,
           is_kids: userData.is_kids_profile,
+          avatar_url: userData.avatar_url // Keep original path
         });
 
         setLoading(false);
       } catch (err) {
-        console.error("Profile error:", err.response?.data || err);
+        console.error("❌ Profile error:", err.response?.data || err);
         toast.error("Failed to load profile");
         setLoading(false);
       }
@@ -55,6 +78,8 @@ const Profile = () => {
       return;
     }
 
+    console.log('📤 Starting file upload:', file.name);
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", "avatar");
@@ -62,12 +87,14 @@ const Profile = () => {
     setUploading(true);
     try {
       const uploadRes = await contentService.uploadFile(formData);
+      console.log('📥 Upload response:', uploadRes.data);
 
       if (!uploadRes.data.success) {
         throw new Error(uploadRes.data.message || "Upload failed");
       }
 
       const uploadedUrl = uploadRes.data.data.url;
+      console.log('✅ Uploaded URL from backend:', uploadedUrl);
 
       const updateRes = await userService.updateProfile({
         id: user.id,
@@ -80,18 +107,38 @@ const Profile = () => {
         is_active: true,
         created_by: user.user_id
       });
+      console.log('📥 Update profile response:', updateRes.data);
 
       if (updateRes.data.success) {
+        // Normalize paths - remove leading/trailing slashes
+        const cleanPath = uploadedUrl.replace(/^\/+/, '');
+        const baseUrl = config.MEDIA_BASE_URL.replace(/\/+$/, '');
+        const fullUrl = `${baseUrl}/${cleanPath}`;
+        
+        console.log('🎨 Constructing display URL:');
+        console.log('   Base URL:', baseUrl);
+        console.log('   Clean Path:', cleanPath);
+        console.log('   Full URL:', fullUrl);
+        
+        // Test if the URL is accessible
+        const testImg = new Image();
+        testImg.onload = () => console.log('✅ Image is accessible:', fullUrl);
+        testImg.onerror = () => console.error('❌ Image failed to load:', fullUrl);
+        testImg.src = fullUrl;
+        
         setUser(prev => ({
           ...prev,
-          profile_picture: `${config.MEDIA_BASE_URL}${uploadedUrl}`
+          profile_picture: fullUrl,
+          avatar_url: uploadedUrl
         }));
+        
         toast.success("Profile picture updated!");
       } else {
         throw new Error(updateRes.data.message);
       }
     } catch (err) {
-      console.error("Upload error:", err);
+      console.error("❌ Upload error:", err);
+      console.error("Error details:", err.response?.data);
       toast.error("Failed to upload photo");
     } finally {
       setUploading(false);
@@ -116,7 +163,14 @@ const Profile = () => {
                   src={user?.profile_picture}
                   alt="Profile"
                   className="profile-avatar"
-                  onError={(e) => (e.currentTarget.src = config.DEFAULT_IMAGES.USER_AVATAR)}
+                  onError={(e) => {
+                    console.error('❌ Image load error:', user?.profile_picture);
+                    console.error('Falling back to default avatar');
+                    e.currentTarget.src = config.DEFAULT_IMAGES.USER_AVATAR;
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully:', user?.profile_picture);
+                  }}
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -476,6 +530,10 @@ const Profile = () => {
         .action-card p {
           color: #999;
           margin: 0;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
